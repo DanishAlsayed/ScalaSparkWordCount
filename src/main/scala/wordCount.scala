@@ -1,0 +1,24 @@
+import org.apache.spark._
+import org.apache.spark.SparkContext._
+import java.net._
+import java.io._
+import scala.io._
+
+object WordCount {
+	def main(args: Array[String]) {
+		val input = args(0)
+		val output = args(1)
+		val conf = new SparkConf().setAppName("wordCountApp")
+		val sc = new SparkContext(conf)
+		val text =  sc.textFile(input)
+		val words = text.flatMap(line => line.split(" "))
+		val wc = words.map(word => (word, 1)).reduceByKey{case (x, y) => x + y}
+		
+		//client
+		val socket = new Socket(InetAddress.getByName("localhost"), 9999)
+		var in = new BufferedSource(socket.getInputStream).getLines
+		val out = new PrintStream(socket.getOutputStream)
+		out.println(wc.collect().mkString(", "))
+		//wc.saveAsTextFile(output)
+	}
+}
